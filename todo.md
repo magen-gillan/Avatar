@@ -1,8 +1,9 @@
-# 404 audit and improvement pass
+# Avatar full functionality audit
 
-- [x] Verify the public GitHub Pages URL, repository Pages configuration, and latest workflow result.
-- [x] Inspect Vite base path, client-side routes, and static fallback behavior.
-- [x] Add a GitHub Pages-safe fallback for direct and refreshed routes.
-- [x] Audit responsive layout, accessibility labels, Local Storage safety, and asset loading.
-- [x] Run type checking, production build, and public deployment verification.
-- [x] Save a new checkpoint and report the final public URL and remaining limitations.
+- [ ] Inspect deployed HTML, JavaScript, CSS, image URLs, and route behavior.
+- [ ] Exercise every visible control on the public site and record failures.
+- [ ] Verify all avatar image assets and associate each avatar name with a visible image.
+- [ ] Fix broken asset paths, missing image fallbacks, and avatar loading state.
+- [ ] Fix non-working navigation, controls, reset behavior, and settings interactions.
+- [ ] Run type checking, production build, and browser-level verification.
+- [ ] Deploy successfully, verify the public site again, and save a final checkpoint.

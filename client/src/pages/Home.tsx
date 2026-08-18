@@ -24,13 +24,16 @@ import {
   Volume2,
 } from "lucide-react";
 
+const ASSET_BASE = `${import.meta.env.BASE_URL}avatar-assets/`;
 const ASSETS = {
-  mark: "/manus-storage/avatar-mark_79d7eca4.png",
-  paper: "/manus-storage/avatar-paper-texture_3c768008.png",
-  stage: "/manus-storage/avatar-stage_a5e8806e.png",
-  accent: "/manus-storage/avatar-accent-card_7427c749.png",
-  aqua: "/manus-storage/aqua_06be60f2.png",
-  darkness: "/manus-storage/darkness_a35bed53.png",
+  mark: `${ASSET_BASE}avatar-mark.png`,
+  paper: `${ASSET_BASE}paper.webp`,
+  stage: `${ASSET_BASE}stage.webp`,
+  accent: `${ASSET_BASE}accent.webp`,
+  aqua: `${ASSET_BASE}aqua.webp`,
+  darkness: `${ASSET_BASE}darkness.webp`,
+  megumin: `${ASSET_BASE}megumin.webp`,
+  wiz: `${ASSET_BASE}wiz.webp`,
 };
 
 type Avatar = {
@@ -47,8 +50,8 @@ type Avatar = {
 const avatars: Avatar[] = [
   { id: "aqua-fantasy", name: "Aqua", className: "Fantasy Fes", source: "101 / Aqua", palette: "#92b8ec", image: ASSETS.aqua, description: "Blue-haired Live2D texture set with water-toned accents.", status: "Texture atlas ready" },
   { id: "darkness-fantasy", name: "Darkness", className: "Fantasy Fes", source: "103 / Darkness", palette: "#d8a05d", image: ASSETS.darkness, description: "Warm gold and ink-black texture set with expressive details.", status: "Texture atlas ready" },
-  { id: "wiz-archive", name: "Wiz", className: "Archive", source: "105 / Wiz", palette: "#a99ad4", image: ASSETS.accent, description: "A soft archive placeholder for the next imported model package.", status: "Manifest pending" },
-  { id: "megumin-collab", name: "Megumin", className: "Collab", source: "102 / Megumin", palette: "#e45b4c", image: ASSETS.paper, description: "A coral-led collection slot reserved for a verified model.", status: "Manifest pending" },
+  { id: "wiz-archive", name: "Wiz", className: "Archive", source: "105 / Wiz", palette: "#a99ad4", image: ASSETS.wiz, description: "Wiz 4-star festival texture package from the Live2D archive.", status: "Texture atlas ready" },
+  { id: "megumin-collab", name: "Megumin", className: "Collab", source: "102 / Megumin", palette: "#e45b4c", image: ASSETS.megumin, description: "Megumin 4-star festival texture package from the Live2D archive.", status: "Texture atlas ready" },
 ];
 
 const STORAGE_KEY = "avatar:session:v1";
@@ -92,6 +95,9 @@ export default function Home() {
   const [motion, setMotion] = useState(savedSession.motion);
   const [autoBlink, setAutoBlink] = useState(savedSession.autoBlink);
   const [volume, setVolume] = useState(savedSession.volume);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [notice, setNotice] = useState("");
   const selected = useMemo(() => avatars.find((avatar) => avatar.id === selectedId) ?? avatars[0], [selectedId]);
 
   useEffect(() => {
@@ -102,6 +108,11 @@ export default function Home() {
     }
   }, [selectedId, background, voice, motion, autoBlink, volume]);
 
+  const announce = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 2600);
+  };
+
   const resetSession = () => {
     setSelectedId(defaultSession.selectedId);
     setBackground(defaultSession.background);
@@ -109,6 +120,7 @@ export default function Home() {
     setMotion(defaultSession.motion);
     setAutoBlink(defaultSession.autoBlink);
     setVolume(defaultSession.volume);
+    announce("Session controls restored to defaults.");
     try {
       window.localStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -127,7 +139,7 @@ export default function Home() {
         <nav className="rail-nav" aria-label="Main navigation">
           <button className={tab === "studio" ? "rail-link active" : "rail-link"} onClick={() => setTab("studio")}><Grid2X2 size={18} /><span>Studio</span><kbd>01</kbd></button>
           <button className={tab === "settings" ? "rail-link active" : "rail-link"} onClick={() => setTab("settings")}><Settings2 size={18} /><span>Settings</span><kbd>02</kbd></button>
-          <button className="rail-link" onClick={() => setTab("settings")}><Library size={18} /><span>Model archive</span><kbd>03</kbd></button>
+          <button className="rail-link" onClick={() => { setTab("studio"); announce("Model archive is ready below the stage."); }}><Library size={18} /><span>Model archive</span><kbd>03</kbd></button>
         </nav>
         <div className="rail-footer">
           <div className="rail-note"><span className="eyebrow">SESSION</span><div className="session-line"><StatusDot /><span>Local workspace</span></div></div>
@@ -138,7 +150,7 @@ export default function Home() {
       <section className="workspace" style={{ backgroundImage: `url(${ASSETS.paper})` }}>
         <header className="topbar">
           <div><span className="eyebrow">LIVE2D / AVATAR CONTROL</span><h1>{tab === "studio" ? "Choose the presence for this session." : "Tune the room around your avatar."}</h1></div>
-          <div className="topbar-actions"><button className="icon-button" aria-label="Help"><CircleHelp size={18} /></button><button className="avatar-user">A<span>local</span></button></div>
+          <div className="topbar-actions"><button className="icon-button" aria-label="Help" onClick={() => setShowHelp(true)}><CircleHelp size={18} /></button><button className="avatar-user" aria-label="Open workspace menu" onClick={() => setShowUserMenu(!showUserMenu)}>A<span>local</span></button>{showUserMenu && <div className="user-menu"><strong>Local workspace</strong><span>Preferences are stored in this browser.</span><button onClick={() => { setShowUserMenu(false); announce("Local workspace is active."); }}>Got it</button></div>}</div>
         </header>
 
         <div className="studio-layout">
@@ -168,13 +180,15 @@ export default function Home() {
             <div className="control-group"><label><span><Volume2 size={15} /> Output volume</span><span className="control-value">{volume}%</span></label><input type="range" min="0" max="100" value={volume} onChange={(event) => setVolume(Number(event.target.value))} /></div>
             <div className="control-group toggles"><label><span><Activity size={15} /> Motion mapping</span><button className={`toggle ${motion ? "on" : ""}`} onClick={() => setMotion(!motion)} aria-label="Toggle motion mapping"><span /></button></label><label><span><Sparkles size={15} /> Auto expressions</span><button className={`toggle ${autoBlink ? "on" : ""}`} onClick={() => setAutoBlink(!autoBlink)} aria-label="Toggle auto expressions"><span /></button></label></div>
             <div className="panel-callout"><Gauge size={17} /><div><strong>Ready for local preview</strong><p>Switching updates the stage immediately. Full model rendering will use the approved Live2D manifest.</p></div></div>
-            <button className="primary-button" onClick={() => setTab("studio")}><MousePointer2 size={16} /> Load {selected.name} into the stage</button>
+            <button className="primary-button" onClick={() => { setTab("studio"); announce(`${selected.name} is loaded into the stage.`); }}><MousePointer2 size={16} /> Load {selected.name} into the stage</button>
             <button className="secondary-button" onClick={resetSession}><RotateCcw size={15} /> Reset session controls</button>
             <div className="panel-footer"><span><Headphones size={14} /> Voice: {voice.split(" · ")[0]}</span><span><MessageCircle size={14} /> LLM ready</span></div>
           </aside>
         </div>
 
         <footer className="workspace-footer"><span>Avatar v0.1 / local-first control surface</span><span><Sun size={13} /> Light paper theme <span className="footer-divider">·</span> <Moon size={13} /> Dark stage preview</span></footer>
+        {notice && <div className="notice" role="status" aria-live="polite">{notice}</div>}
+        {showHelp && <div className="modal-backdrop" role="presentation" onClick={() => setShowHelp(false)}><section className="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title" onClick={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close help" onClick={() => setShowHelp(false)}>×</button><span className="eyebrow">QUICK GUIDE</span><h2 id="help-title">Make the stage yours.</h2><p>Choose a numbered package below the stage, then tune the background, voice, volume, motion mapping, and expressions from Session controls.</p><p>Your choices are saved in this browser and restored on the next visit.</p><button className="primary-button" onClick={() => setShowHelp(false)}>Back to studio</button></section></div>}
       </section>
     </main>
   );
