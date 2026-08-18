@@ -1,8 +1,8 @@
-# Local Storage update
+# 404 audit and improvement pass
 
-- [x] Define a versioned storage key and persisted session settings shape.
-- [x] Restore avatar and settings safely with validation and defaults.
-- [x] Persist changes whenever the selected avatar or controls change.
-- [x] Make reset clear the persisted settings and restore defaults.
-- [x] Run type checking and production build.
-- [ ] Save a new checkpoint and report the updated version.
+- [ ] Verify the public GitHub Pages URL, repository Pages configuration, and latest workflow result.
+- [ ] Inspect Vite base path, client-side routes, and static fallback behavior.
+- [ ] Add a GitHub Pages-safe fallback for direct and refreshed routes.
+- [ ] Audit responsive layout, accessibility labels, Local Storage safety, and asset loading.
+- [ ] Run type checking, production build, and public deployment verification.
+- [ ] Save a new checkpoint and report the final public URL and remaining limitations.
