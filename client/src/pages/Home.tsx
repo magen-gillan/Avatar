@@ -1,5 +1,5 @@
 /* Ink Console design: the studio is a tactile archive sheet with a dominant stage, avatar filmstrip, and focused settings column. */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AudioLines,
@@ -51,19 +51,70 @@ const avatars: Avatar[] = [
   { id: "megumin-collab", name: "Megumin", className: "Collab", source: "102 / Megumin", palette: "#e45b4c", image: ASSETS.paper, description: "A coral-led collection slot reserved for a verified model.", status: "Manifest pending" },
 ];
 
+const STORAGE_KEY = "avatar:session:v1";
+
+const defaultSession = {
+  selectedId: "aqua-fantasy",
+  background: "Ink stage",
+  voice: "Aqua · Azure Neural",
+  motion: true,
+  autoBlink: true,
+  volume: 72,
+};
+
+type SessionSettings = typeof defaultSession;
+
+function readSession(): SessionSettings {
+  if (typeof window === "undefined") return defaultSession;
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null") as Partial<SessionSettings> | null;
+    if (!saved || typeof saved !== "object") return defaultSession;
+    const selectedId = typeof saved.selectedId === "string" && avatars.some((avatar) => avatar.id === saved.selectedId) ? saved.selectedId : defaultSession.selectedId;
+    const background = saved.background === "Paper" || saved.background === "Ink stage" ? saved.background : defaultSession.background;
+    const voice = typeof saved.voice === "string" ? saved.voice : defaultSession.voice;
+    const volume = typeof saved.volume === "number" && Number.isFinite(saved.volume) ? Math.min(100, Math.max(0, saved.volume)) : defaultSession.volume;
+    return { selectedId, background, voice, motion: typeof saved.motion === "boolean" ? saved.motion : defaultSession.motion, autoBlink: typeof saved.autoBlink === "boolean" ? saved.autoBlink : defaultSession.autoBlink, volume };
+  } catch {
+    return defaultSession;
+  }
+}
+
 function StatusDot({ tone = "green" }: { tone?: "green" | "coral" | "muted" }) {
   return <span className={`status-dot status-dot-${tone}`} aria-hidden="true" />;
 }
 
 export default function Home() {
-  const [selectedId, setSelectedId] = useState("aqua-fantasy");
+  const [savedSession] = useState<SessionSettings>(readSession);
+  const [selectedId, setSelectedId] = useState(savedSession.selectedId);
   const [tab, setTab] = useState<"studio" | "settings">("studio");
-  const [background, setBackground] = useState("Ink stage");
-  const [voice, setVoice] = useState("Aqua · Azure Neural");
-  const [motion, setMotion] = useState(true);
-  const [autoBlink, setAutoBlink] = useState(true);
-  const [volume, setVolume] = useState(72);
+  const [background, setBackground] = useState(savedSession.background);
+  const [voice, setVoice] = useState(savedSession.voice);
+  const [motion, setMotion] = useState(savedSession.motion);
+  const [autoBlink, setAutoBlink] = useState(savedSession.autoBlink);
+  const [volume, setVolume] = useState(savedSession.volume);
   const selected = useMemo(() => avatars.find((avatar) => avatar.id === selectedId) ?? avatars[0], [selectedId]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ selectedId, background, voice, motion, autoBlink, volume } satisfies SessionSettings));
+    } catch {
+      // Local Storage may be unavailable in private or restricted browsing contexts.
+    }
+  }, [selectedId, background, voice, motion, autoBlink, volume]);
+
+  const resetSession = () => {
+    setSelectedId(defaultSession.selectedId);
+    setBackground(defaultSession.background);
+    setVoice(defaultSession.voice);
+    setMotion(defaultSession.motion);
+    setAutoBlink(defaultSession.autoBlink);
+    setVolume(defaultSession.volume);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore unavailable storage and keep the in-memory defaults.
+    }
+  };
 
   return (
     <main className="app-shell">
@@ -118,7 +169,7 @@ export default function Home() {
             <div className="control-group toggles"><label><span><Activity size={15} /> Motion mapping</span><button className={`toggle ${motion ? "on" : ""}`} onClick={() => setMotion(!motion)} aria-label="Toggle motion mapping"><span /></button></label><label><span><Sparkles size={15} /> Auto expressions</span><button className={`toggle ${autoBlink ? "on" : ""}`} onClick={() => setAutoBlink(!autoBlink)} aria-label="Toggle auto expressions"><span /></button></label></div>
             <div className="panel-callout"><Gauge size={17} /><div><strong>Ready for local preview</strong><p>Switching updates the stage immediately. Full model rendering will use the approved Live2D manifest.</p></div></div>
             <button className="primary-button" onClick={() => setTab("studio")}><MousePointer2 size={16} /> Load {selected.name} into the stage</button>
-            <button className="secondary-button" onClick={() => { setSelectedId("aqua-fantasy"); setBackground("Ink stage"); setVoice("Aqua · Azure Neural"); setMotion(true); setAutoBlink(true); setVolume(72); }}><RotateCcw size={15} /> Reset session controls</button>
+            <button className="secondary-button" onClick={resetSession}><RotateCcw size={15} /> Reset session controls</button>
             <div className="panel-footer"><span><Headphones size={14} /> Voice: {voice.split(" · ")[0]}</span><span><MessageCircle size={14} /> LLM ready</span></div>
           </aside>
         </div>
